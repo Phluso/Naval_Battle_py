@@ -15,7 +15,7 @@ from random import randint as rand
 
 #informações sobre as dimensões da grade
 gridInfo = {
-    "width"     : 26,
+    "width"     : 10,
     "height"    : 9,
     "barcos"    : 0
 }
@@ -190,4 +190,4 @@ criarGrade()
 criarBarco()
 printGrade()
 jogar()
-print(grid)
+
