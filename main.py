@@ -22,27 +22,21 @@ gridInfo = {
 gridInfo["width"] = clamp(gridInfo["width"], 9, 26)
 gridInfo["height"] = clamp(gridInfo["height"], 9, 9)
 
-grid = []
-
 #array com as coordenadas do eixo X
 coord = "abcdefghijklmnopqrstuvwxyz"
 
-def criarGrade():
+def criarGrade(width, height):
     #criar grade, da esquerda pra direita, de cima pra baixo
-    global grid
-
-    for y in range(gridInfo["height"]):
-        linha = []
-        for x in range(gridInfo["width"]):
-
-            linha.append(0)
-        grid.append(linha)
+    mat = []
+    for i in range(height):
+        mat.append([0] * width)
+    return mat
 
 def printGrade():
     global gridInfo
     global grid
     global coord
-    #clear()
+    clear()
 
     #(vazio, navio, erro, acerto)
     sts = "  .x"
@@ -164,8 +158,7 @@ def criarBarco():
         nBarco(1)
 
 
-criarGrade()
+grid = criarGrade(gridInfo["width"], gridInfo["height"])
 criarBarco()
 printGrade()
 jogar()
-
