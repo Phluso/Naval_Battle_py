@@ -8,22 +8,20 @@ def clamp(n, min, max):
         return min
     elif (n > max):
         return max
-    else:
-        return n
+    return n
 
 from random import randint as rand
 
 #informações sobre as dimensões da grade
 gridInfo = {
     "width"     : 10,
-    "height"    : 9,
+    "height"    : 7,
     "barcos"    : 0
 }
 
-gridInfo["width"] = clamp(gridInfo["width"], 10, 26)
-gridInfo["height"] = clamp(gridInfo["height"], 5, 9)
+gridInfo["width"] = clamp(gridInfo["width"], 9, 26)
+gridInfo["height"] = clamp(gridInfo["height"], 9, 9)
 
-#array que será preenchida com dicionários, contendo a posição XxY do tile, se há algum barco no tile, e se ele já foi usado
 grid = []
 
 #array com as coordenadas do eixo X
@@ -33,36 +31,22 @@ def criarGrade():
     #criar grade, da esquerda pra direita, de cima pra baixo
     global grid
 
-    pos = {
-        "x" : 0,
-        "y" : 0,
-    }
-
-    for i in range(gridInfo["height"]):
+    for y in range(gridInfo["height"]):
         linha = []
-        for j in range(gridInfo["width"]):
-            x = pos["x"]
-            y = pos["y"]
-            pos["x"] += 1
+        for x in range(gridInfo["width"]):
 
-            tile = {
-                "x"     : x,
-                "y"     : y,
-                "sts"   : " ",
-                "barco" : False,
-                "tiro"  : False
-            }
-
-            linha.append(tile)
-        pos["x"] = 0
-        pos["y"] += 1
+            linha.append(0)
         grid.append(linha)
 
 def printGrade():
     global gridInfo
     global grid
     global coord
-    clear()
+    #clear()
+
+    #(vazio, navio, erro, acerto)
+    sts = "  .x"
+
     print(f"Barcos restantes: {gridInfo['barcos']}\n")
 
     print("    ", end="")
@@ -73,18 +57,11 @@ def printGrade():
     print("-+")
 
     for i in range(gridInfo["height"]):
+        print(i, end=" | ")
         for j in range(gridInfo["width"]):
-            end = " "
-            if (grid[i][j]["x"] == gridInfo["width"] -1):
-                end = " |\n"
-            if (grid[i][j]["x"] == 0):
-                print(f"{i + 1} | ", end="")
-
-            #desenhar o barco (apagar depois)
-            #if (grid[i][j]["barco"] == True):
-            #    grid[i][j]["sts"] = "o"
-
-            print(grid[i][j]["sts"], end=end)
+            print(sts[grid[i][j]], end=" ")
+        print("|")
+        
     print("  +", end="")
     print("-" * gridInfo["width"] * 2, end="")
     print("-+")
@@ -102,6 +79,8 @@ def jogar():
         try:
             jogada = input("Insira a coordenada (letra x número) ou '-1' para sair: ")
             if (jogada == "-1"):
+                for i in range(len(grid)):
+                    print(grid[i])
                 break
         except:
             print("Erro")
@@ -114,69 +93,68 @@ def jogar():
                 
                 y = int(jogada[1])
 
-                for i in range(gridInfo["height"]):
-                    for j in range(gridInfo["width"]):
-                        if (grid[i][j]["x"] == x) and (grid[i][j]["y"] == y - 1) and (grid[i][j]["tiro"] == False):   #mudar o desenho do tile atingido
-                            grid[i][j]["tiro"] = True           #impede que o mesmo tile seja atingido novamente
-                            if (grid[i][j]["barco"] == True):   #se houver um barco
-                                grid[i][j]["sts"] = "x"         #mudar o desenho para um X
-                                grid[i][j]["barco"] = False     #destruir o barco
-                                gridInfo["barcos"] -= 1         #diminuir a quantidade de barcos na grade
-                            else:
-                                grid[i][j]["sts"] = "."         #se não tiver um barco, exibir um ponto
-                            clear()
-                            printGrade()
+
+                if grid[y][x] == 0: #jogador errou e acertou no mar
+                    grid[y][x] = 2
+
+                if grid[y][x] == 1: #jogador acertou a célula de um navio
+                    grid[y][x] = 3
+                    gridInfo["barcos"] -= 1
+
+                clear()
+                printGrade()
             except:
                 print("Erro")
                 continue
+
+def checaBarco(rotacao, comprimento, pivoX, pivoY):
+    global grid
+    margin = 1
+
+    #verificar se o espaço do barco está vazio e com uma margem de uma célula de outros barcos
+    if rotacao == 1:
+        for y in range(pivoY - margin, pivoY + comprimento + margin):
+            for x in range(pivoX - margin, pivoX + margin + 1):
+                try:
+                    if grid[y][x] > 0:
+                        return False
+                except:
+                    continue
+
+    if rotacao == 0:
+        for y in range(pivoY - margin, pivoY + margin + 1):
+            for x in range(pivoX - margin, pivoX + comprimento + margin):
+                try:
+                    if grid[y][x] > 0:
+                        return False
+                except:
+                    continue
+    return True
 
 def nBarco(comprimento):
     global grid
     global gridInfo 
 
-    barco = {
-        "x" : [],
-        "y" : []
-    }
+    #tentar 1000 vezes encaixar os barcos na grade
+    for i in range(1000):
+        rotacao = rand(0, 1)    #definir se o barco estará na vertical ou não (0 = não, 1 = sim)
+        #rotacao = 0
+        pivoX = rand(0, gridInfo["width"] - comprimento)
+        pivoY = rand(0, gridInfo["height"] - comprimento)
 
-    pivoX = rand(0, gridInfo["width"] - comprimento)
-    pivoY = rand(0, gridInfo["height"] - comprimento)
-
-    rotacao = rand(0, 1)    #definir se o barco estará na vertical ou não (0 = não, 1 = sim)
-
-    while (pivoX + comprimento >= gridInfo["width"]):
-        pivoX -= 1
-
+        if checaBarco(rotacao, comprimento, pivoX, pivoY):
+            break
+    
     for i in range(comprimento):
         if (rotacao == True):
-            barco["x"].append(pivoX)
-            barco["y"].append(pivoY + i)
+            grid[pivoY + i][pivoX] = 1
         else:
-            barco["x"].append(pivoX + i)
-            barco["y"].append(pivoY)
+            grid[pivoY][pivoX + i] = 1
 
-    for i in range(gridInfo["height"]):                                                                 #varrer todas as linhas da grade
-        for j in range(gridInfo["width"]):                                                              #varrer todas as colunas da grade
-            for x in range(len(barco["x"])):                                                            #varrer as linhas do barco
-                for y in range(len(barco["y"])):                                                        #varrer as colunas do barco
-                    if (grid[i][j]["x"] == barco["x"][x]) and (grid[i][j]["y"] == barco["y"][y]) and (grid[i][j]["barco"] == False):       #se a posição X e Y do tile na grade coincidir com a posição X e Y do barco
-                        grid[i][j]["barco"] = True
-                        gridInfo["barcos"] += 1
+        gridInfo["barcos"] += 1
+
 
 def criarBarco():
-    global grid
-    global gridInfo
-
-
-
-    '''
-        comprimento     |       quantidade
-            4           |           1
-            3           |           2
-            2           |           3
-            1           |           4
-    '''
-
     nBarco(4)
     for i in range(2):
         nBarco(3)
